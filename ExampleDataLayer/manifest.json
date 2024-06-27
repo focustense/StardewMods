@@ -1,0 +1,11 @@
+﻿{
+    "Name": "Example Data Layer",
+    "Author": "Pathoschild",
+    "Version": "0.0.1",
+    "MinimumApiVersion": "4.0.7",
+    "MinimumGameVersion": "1.6.4",
+    "Description": "Test for the Data Layers mod integration",
+    "UniqueID": "Pathoschild.ExampleDataLayer",
+    "EntryDll": "ExampleDataLayer.dll",
+    "UpdateKeys": [ ]
+}
