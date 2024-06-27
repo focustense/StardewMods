@@ -18,14 +18,19 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     /// <summary>The color schemes available to apply.</summary>
     private readonly Dictionary<string, ColorScheme> ColorSchemes;
 
+    /// <summary>Layers registered by other mods.</summary>
+    private readonly ILayerRegistry LayerRegistry;
+
 
     /*********
     ** Public methods
     *********/
     /// <summary>Construct an instance.</summary>
+    /// <param name="layerRegistry">Layers registered by other mods.</param>
     /// <param name="colorSchemes">The color schemes available to apply.</param>
-    public GenericModConfigMenuIntegrationForDataLayers(Dictionary<string, ColorScheme> colorSchemes)
+    public GenericModConfigMenuIntegrationForDataLayers(ILayerRegistry layerRegistry, Dictionary<string, ColorScheme> colorSchemes)
     {
+        this.LayerRegistry = layerRegistry;
         this.ColorSchemes = colorSchemes;
     }
 
@@ -76,20 +81,59 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
                 set: (config, value) => config.Controls.NextLayer = value
             );
 
-        this.AddLayerConfig(menu, config => config.Layers.Accessible, "accessible");
-        this.AddLayerConfig(menu, config => config.Layers.Buildable, "buildable");
-        this.AddLayerConfig(menu, config => config.Layers.CoverageForBeeHouses, "bee-houses");
-        this.AddLayerConfig(menu, config => config.Layers.CoverageForJunimoHuts, "junimo-huts");
-        this.AddLayerConfig(menu, config => config.Layers.CoverageForScarecrows, "scarecrows");
-        this.AddLayerConfig(menu, config => config.Layers.CoverageForSprinklers, "sprinklers");
-        this.AddLayerConfig(menu, config => config.Layers.CropHarvest, "crop-harvest");
-        this.AddLayerConfig(menu, config => config.Layers.CropWater, "crop-water");
-        this.AddLayerConfig(menu, config => config.Layers.CropPaddyWater, "crop-paddy-water");
-        this.AddLayerConfig(menu, config => config.Layers.CropFertilizer, "crop-fertilizer");
-        this.AddLayerConfig(menu, config => config.Layers.Machines, "machines");
-        this.AddLayerConfig(menu, config => config.Layers.TileGrid, "grid");
-        this.AddLayerConfig(menu, config => config.Layers.Tillable, "tillable");
+        List<LayerConfigSection> configSections = [
+            GetBuiltInSection(config => config.Layers.Accessible, "accessible"),
+            GetBuiltInSection(config => config.Layers.Buildable, "buildable"),
+            GetBuiltInSection(config => config.Layers.CoverageForBeeHouses, "bee-houses"),
+            GetBuiltInSection(config => config.Layers.CoverageForJunimoHuts, "junimo-huts"),
+            GetBuiltInSection(config => config.Layers.CoverageForScarecrows, "scarecrows"),
+            GetBuiltInSection(config => config.Layers.CoverageForSprinklers, "sprinklers"),
+            GetBuiltInSection(config => config.Layers.CropHarvest, "crop-harvest"),
+            GetBuiltInSection(config => config.Layers.CropWater, "crop-water"),
+            GetBuiltInSection(config => config.Layers.CropPaddyWater, "crop-paddy-water"),
+            GetBuiltInSection(config => config.Layers.CropFertilizer, "crop-fertilizer"),
+            GetBuiltInSection(config => config.Layers.Machines, "machines"),
+            GetBuiltInSection(config => config.Layers.TileGrid, "grid"),
+            GetBuiltInSection(config => config.Layers.Tillable, "tillable"),
+        ];
+
+        foreach (var registration in this.LayerRegistry.GetAllRegistrations())
+        {
+            configSections.Add(new(
+                config => config.GetModLayerConfig(registration.Id),
+                () => I18n.GetByKey(
+                    "config.section.layer",
+                    new { LayerName = registration.Layer.Name })));
+        }
+        // Language can change while the game is running, but usually doesn't. This gives us
+        // alphabetical order most of the time.
+        configSections.Sort((a, b) => a.GetTitle().CompareTo(b.GetTitle()));
+        foreach (var section in configSections)
+        {
+            this.AddLayerConfigSection(menu, section);
+        }
+
     }
+
+    /// <summary>
+    /// Derives <see cref="LayerConfigSection"/> data for an internal (built-in) layer type.
+    /// </summary>
+    /// <param name="getLayer">Function to get the layer field from a config model.</param>
+    /// <param name="translationKey">The translation key for this layer.</param>
+    /// <returns></returns>
+    private static LayerConfigSection GetBuiltInSection(
+        Func<ModConfig, LayerConfig> getLayer,
+        string translationKey)
+    {
+        return new(getLayer, () => GetLayerSectionTitle(translationKey));
+    }
+
+    /// <summary>Information about a single layer's configuration settings.</summary>
+    /// <param name="GetLayer">Function to get the layer field from a config model.</param>
+    /// <param name="GetTitle">Function to get the (localized) section title.</param>
+    private record LayerConfigSection(
+        Func<ModConfig, LayerConfig> GetLayer,
+        Func<string> GetTitle);
 
 
     /*********
@@ -97,45 +141,44 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     *********/
     /// <summary>Add the config section for a layer.</summary>
     /// <param name="menu">The integration API through which to register the config menu.</param>
-    /// <param name="getLayer">Get the layer field from a config model.</param>
-    /// <param name="translationKey">The translation key for this layer.</param>
-    private void AddLayerConfig(GenericModConfigMenuIntegration<ModConfig> menu, Func<ModConfig, LayerConfig> getLayer, string translationKey)
+    /// <param name="section">Contains the information about this layer/config section.</param>
+    private void AddLayerConfigSection(GenericModConfigMenuIntegration<ModConfig> menu, LayerConfigSection section)
     {
-        LayerConfig defaultConfig = getLayer(this.DefaultConfig);
+        LayerConfig defaultConfig = section.GetLayer(this.DefaultConfig);
 
         menu
-            .AddSectionTitle(() => this.GetLayerSectionTitle(translationKey))
+            .AddSectionTitle(section.GetTitle)
             .AddCheckbox(
                 name: I18n.Config_LayerEnabled_Name,
                 tooltip: I18n.Config_LayerEnabled_Desc,
-                get: config => getLayer(config).Enabled,
-                set: (config, value) => getLayer(config).Enabled = value
+                get: config => section.GetLayer(config).Enabled,
+                set: (config, value) => section.GetLayer(config).Enabled = value
             )
             .AddCheckbox(
                 name: I18n.Config_LayerUpdateOnViewChange_Name,
                 tooltip: I18n.Config_LayerUpdateOnViewChange_Desc,
-                get: config => getLayer(config).UpdateWhenViewChange,
-                set: (config, value) => getLayer(config).UpdateWhenViewChange = value
+                get: config => section.GetLayer(config).UpdateWhenViewChange,
+                set: (config, value) => section.GetLayer(config).UpdateWhenViewChange = value
             )
             .AddNumberField(
                 name: I18n.Config_LayerUpdatesPerSecond_Name,
                 tooltip: () => I18n.Config_LayerUpdatesPerSecond_Desc(defaultValue: defaultConfig.UpdatesPerSecond),
-                get: config => (float)getLayer(config).UpdatesPerSecond,
-                set: (config, value) => getLayer(config).UpdatesPerSecond = (decimal)value,
+                get: config => (float)section.GetLayer(config).UpdatesPerSecond,
+                set: (config, value) => section.GetLayer(config).UpdatesPerSecond = (decimal)value,
                 min: 0.1f,
                 max: 60f
             )
             .AddKeyBinding(
                 name: I18n.Config_LayerShortcut_Name,
                 tooltip: I18n.Config_LayerShortcut_Desc,
-                get: config => getLayer(config).ShortcutKey,
-                set: (config, value) => getLayer(config).ShortcutKey = value
+                get: config => section.GetLayer(config).ShortcutKey,
+                set: (config, value) => section.GetLayer(config).ShortcutKey = value
             );
     }
 
     /// <summary>Get the translated section title for a layer.</summary>
     /// <param name="translationKey">The layer ID.</param>
-    private string GetLayerSectionTitle(string translationKey)
+    private static string GetLayerSectionTitle(string translationKey)
     {
         string layerName = I18n.GetByKey($"{translationKey}.name");
         return I18n.Config_Section_Layer(layerName);

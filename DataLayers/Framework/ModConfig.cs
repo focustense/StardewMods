@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 using Pathoschild.Stardew.Common;
@@ -25,6 +27,9 @@ internal class ModConfig
     /// <summary>The generic settings for each layer.</summary>
     public ModConfigLayers Layers { get; set; } = new();
 
+        /// <summary>The generic settings for mod-added layers, keyed by mod ID and layer name.</summary>
+        public Dictionary<string, LayerConfig> ModLayers { get; set; } = [];
+
 
     /*********
     ** Public methods
@@ -38,5 +43,21 @@ internal class ModConfig
     {
         this.Controls ??= new ModConfigKeys();
         this.Layers ??= new ModConfigLayers();
+    }
+
+    /// <summary>
+    /// Retrieves the layer configuration for a specific mod-registered layer, creating one if
+    /// it does not already exist.
+    /// </summary>
+    /// <param name="id">Unique ID for the layer; the <see cref="LayerRegistration.Id"/>.</param>
+    /// <returns>The configuration for the layer with specified <paramref name="id"/>.</returns>
+    public LayerConfig GetModLayerConfig(string id)
+    {
+        if (!this.ModLayers.TryGetValue(id, out var layer))
+        {
+            layer = new();
+            this.ModLayers.Add(id, layer);
+        }
+        return layer;
     }
 }
