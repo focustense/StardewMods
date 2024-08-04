@@ -184,7 +184,7 @@ internal class ModEntry : Mod
        {
            yield return new ModLayer(
                registration,
-               config.GetModLayerConfig(registration.Id),
+               config.GetModLayerConfig(registration.UniqueId),
                colors,
                this.Monitor);
        }

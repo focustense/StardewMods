@@ -100,7 +100,7 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
         foreach (var registration in this.LayerRegistry.GetAllRegistrations())
         {
             configSections.Add(new(
-                config => config.GetModLayerConfig(registration.Id),
+                config => config.GetModLayerConfig(registration.UniqueId),
                 () => I18n.GetByKey(
                     "config.section.layer",
                     new { LayerName = registration.Layer.Name })));

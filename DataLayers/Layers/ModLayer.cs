@@ -60,7 +60,7 @@ internal class ModLayer(
     {
         if (this.LegendEntries is null)
         {
-            var builder = new LegendBuilder(source.Id, colors);
+            var builder = new LegendBuilder(source.LocalId, colors);
             source.Layer.Configure(builder);
             this.LegendEntries = builder.Entries.ToDictionary(entry => entry.Id);
         }

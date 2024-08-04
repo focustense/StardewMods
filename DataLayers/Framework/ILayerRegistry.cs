@@ -5,10 +5,11 @@ namespace Pathoschild.Stardew.DataLayers.Framework;
 /// <summary>
 /// Data for a single mod-provided layer registered through the API.
 /// </summary>
-/// <param name="Id">Unique ID for this layer, including both the unique mod ID and the local layer
+/// <param name="UniqueId">Unique ID for this layer, including both the unique mod ID and the local layer
 /// ID specified by that mod.</param>
+/// <param name="LocalId">Local layer ID for the mod; used in color schemes.</param>
 /// <param name="Layer">The layer configuration provided by the mod.</param>
-internal record LayerRegistration(string Id, IDataLayer Layer);
+internal record LayerRegistration(string UniqueId, string LocalId, IDataLayer Layer);
 
 /// <summary>
 /// Provides access to registered layers.

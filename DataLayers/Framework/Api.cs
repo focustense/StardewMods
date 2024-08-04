@@ -35,7 +35,7 @@ public class Api : IDataLayersApi, ILayerRegistry
     public void RegisterLayer(IManifest mod, string id, IDataLayer layer)
     {
         string globalId = $"{mod.UniqueID}:{id}";
-        var registration = new LayerRegistration(globalId, layer);
+        var registration = new LayerRegistration(globalId, id, layer);
         if (!this.Registrations.TryAdd(globalId, registration))
         {
             this.Monitor.Log(
