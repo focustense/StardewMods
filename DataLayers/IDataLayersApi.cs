@@ -87,12 +87,10 @@ public interface ILegendBuilder
     /// <c>defaultTileTypeId</c> used in <see cref="ILayerBuilder.AddTileGroup)"/> and the
     /// <c>typeId</c> for <see cref="ITileGroupBuilder.AddTile"/>.</param>
     /// <param name="name">Descriptive text to show in the actual legend UI.</param>
-    /// <param name="colorId">The ID of the color to display for this type in the layer's color
-    /// scheme (i.e. the field name in <c>colors.json</c>, not including the layer ID).</param>
     /// <param name="color">The default overlay color for tiles tagged with <paramref name="id"/>,
     /// if no color is specified in the <see cref="ColorScheme"/>.</param>
     /// <returns>The current builder instance, for configuring additional entries.</returns>
-    ILegendBuilder Add(string id, string name, string colorId, Color color);
+    ILegendBuilder Add(string id, string name, Color color);
 }
 
 /// <summary>

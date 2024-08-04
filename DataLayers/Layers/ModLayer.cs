@@ -71,9 +71,9 @@ internal class ModLayer(
     {
         internal readonly List<LegendEntry> Entries = [];
 
-        public ILegendBuilder Add(string id, string name, string colorId, Color defaultColor)
+        public ILegendBuilder Add(string id, string name, Color defaultColor)
         {
-            this.Entries.Add(new(id, name, colors.Get(layerId, colorId, defaultColor)));
+            this.Entries.Add(new(id, name, colors.Get(layerId, id, defaultColor)));
             return this;
         }
     }
