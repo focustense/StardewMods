@@ -113,18 +113,24 @@ internal class ModLayer(
         public ITileGroupBuilder AddTile(Vector2 position, string? typeId = null)
         {
             typeId ??= defaultTileTypeId;
-            if (!string.IsNullOrEmpty(typeId)
-                && legendEntries.TryGetValue(typeId, out var legendEntry))
+            if (string.IsNullOrEmpty(typeId))
+            {
+                return this;
+            }
+            if (legendEntries.TryGetValue(typeId, out var legendEntry))
             {
                 this.Tiles.Add(new(position, legendEntry));
             }
-            // Layers can update many times per second, so only log once per bad type ID to avoid
-            // relentless spamming. We also don't include the position in the log entry, because
-            // that could exponentially increase the number of "unique" warnings generated that are
-            // all essentially saying the same thing.
-            monitor.LogOnce(
-                $"Invalid (unregistered) tile type {typeId} provided in layer {layerName} ({layerId}).",
-                LogLevel.Warn);
+            else
+            {
+                // Layers can update many times per second, so only log once per bad type ID to avoid
+                // relentless spamming. We also don't include the position in the log entry, because
+                // that could exponentially increase the number of "unique" warnings generated that are
+                // all essentially saying the same thing.
+                monitor.LogOnce(
+                    $"Invalid (unregistered) tile type {typeId} provided in layer {layerName} ({layerId}).",
+                    LogLevel.Warn);
+            }
             return this;
         }
 
