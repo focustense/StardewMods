@@ -15,8 +15,8 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     /// <summary>The default mod settings.</summary>
     private readonly ModConfig DefaultConfig = new();
 
-    /// <summary>The color schemes available to apply.</summary>
-    private readonly Dictionary<string, ColorScheme> ColorSchemes;
+    /// <summary>The color registry holding available schemes and colors.</summary>
+    private readonly ColorRegistry ColorRegistry;
 
     /// <summary>Layers registered by other mods.</summary>
     private readonly ILayerRegistry LayerRegistry;
@@ -28,10 +28,10 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     /// <summary>Construct an instance.</summary>
     /// <param name="layerRegistry">Layers registered by other mods.</param>
     /// <param name="colorSchemes">The color schemes available to apply.</param>
-    public GenericModConfigMenuIntegrationForDataLayers(ILayerRegistry layerRegistry, Dictionary<string, ColorScheme> colorSchemes)
+    public GenericModConfigMenuIntegrationForDataLayers(ILayerRegistry layerRegistry, ColorRegistry colorRegistry)
     {
         this.LayerRegistry = layerRegistry;
-        this.ColorSchemes = colorSchemes;
+        this.ColorRegistry = colorRegistry;
     }
 
     /// <inheritdoc />
@@ -57,7 +57,7 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
                 tooltip: I18n.Config_ColorSchene_Desc,
                 get: config => config.ColorScheme,
                 set: (config, value) => config.ColorScheme = value,
-                allowedValues: this.ColorSchemes.Keys.ToArray(),
+                allowedValues: this.ColorRegistry.SchemeIds.ToArray(),
                 formatAllowedValue: key => I18n.GetByKey($"config.color-schemes.{key}").Default(key)
             )
 

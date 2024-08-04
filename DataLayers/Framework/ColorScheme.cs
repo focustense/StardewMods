@@ -63,4 +63,15 @@ internal class ColorScheme
     {
         return string.Equals(id, "Default", StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>Merges the colors in this color scheme with those from another color scheme.</summary>
+    /// <remarks>If both schemes define the same color, <paramref name="other"/> takes precedence.</remarks>
+    /// <param name="other">The colors from the scheme to be merged.</param>
+    public void Merge(Dictionary<string, Color> colors)
+    {
+        foreach (var (name, color) in colors)
+        {
+            this.Colors[name] = color;
+        }
+    }
 }

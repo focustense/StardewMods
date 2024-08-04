@@ -33,10 +33,10 @@ internal class ModEntry : Mod
     /// <summary>The configured key bindings.</summary>
     private ModConfigKeys Keys => this.Config.Controls;
 
-    /// <summary>The color schemes available to apply.</summary>
-    private Dictionary<string, ColorScheme> ColorSchemes = null!; // loaded in Entry
+    /// <summary>The color registry with available color schemes.</summary>
+    private ColorRegistry ColorRegistry = null!; // loaded in Entry
 
-    /// <summary>The display colors to use.</summary>
+    /// <summary>The current display colors to use.</summary>
     private ColorScheme Colors = null!; // loaded in Entry
 
     /// <summary>The available data layers.</summary>
@@ -65,8 +65,9 @@ internal class ModEntry : Mod
 
         // read config
         this.Config = helper.ReadConfig<ModConfig>();
-        this.Api = new(this.Monitor);
-        this.ColorSchemes = this.LoadColorSchemes();
+        this.ColorRegistry = new(this.Monitor);
+        this.ColorRegistry.LoadDefaultSchemes(helper.Data);
+        this.Api = new(this.ColorRegistry, this.Monitor);
         this.Colors = this.LoadColorScheme();
 
         // validate config
@@ -118,7 +119,7 @@ internal class ModEntry : Mod
     {
         // add config UI
         this.AddGenericModConfigMenu(
-            new GenericModConfigMenuIntegrationForDataLayers(this.Api, this.ColorSchemes),
+            new GenericModConfigMenuIntegrationForDataLayers(this.Api, this.ColorRegistry),
             get: () => this.Config,
             set: config => this.Config = config,
             onSaved: this.ReapplyConfig
@@ -348,11 +349,11 @@ internal class ModEntry : Mod
     private ColorScheme LoadColorScheme()
     {
         // get requested scheme
-        if (this.ColorSchemes.TryGetValue(this.Config.ColorScheme, out ColorScheme? scheme))
+        if (this.ColorRegistry.TryGetScheme(this.Config.ColorScheme, out ColorScheme? scheme))
             return scheme;
 
         // fallback to default scheme
-        if (!ColorScheme.IsDefaultColorScheme(this.Config.ColorScheme) && this.ColorSchemes.TryGetValue("Default", out scheme))
+        if (!ColorScheme.IsDefaultColorScheme(this.Config.ColorScheme) && this.ColorRegistry.TryGetScheme("Default", out scheme))
         {
             this.Monitor.Log($"Color scheme '{this.Config.ColorScheme}' not found in '{ColorScheme.AssetName}', reset to default.", LogLevel.Warn);
             this.Config.ColorScheme = "Default";

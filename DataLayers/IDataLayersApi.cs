@@ -13,6 +13,18 @@ namespace Pathoschild.Stardew.DataLayers;
 public interface IDataLayersApi
 {
     /// <summary>
+    /// Registers color schemes to be merged with existing schemes.
+    /// </summary>
+    /// <remarks>
+    /// Mods will typically call this with scheme data loaded via
+    /// <c>Helper.Data.ReadJsonFile<Dictionary<string, Dictionary<string, string?>>>("path/to/asset.json")</c>
+    /// using an asset in their own mod.
+    /// </remarks>
+    /// <param name="schemeData">Raw dictionary data from the color scheme JSON. Each entry is a pair whose key is the scheme ID and whose value is a map of color names to color values for that scheme.</param>
+    /// <param name="assetName">Name of the asset used to load the data. Only used for logging errors and does not affect behavior.</param>
+    void RegisterColorSchemes(Dictionary<string, Dictionary<string, string?>> schemeData, string assetName);
+
+    /// <summary>
     /// Registers a new layer to be managed by Data Layers.
     /// </summary>
     /// <remarks>
@@ -23,7 +35,7 @@ public interface IDataLayersApi
     /// <param name="id">A unique (within this mod) ID for the layer. Can be left empty if the mod
     /// only provides a single layer.</param>
     /// <param name="layer">Implementation of the layer to register.</param>
-    void Register(IManifest mod, string id, IDataLayer layer);
+    void RegisterLayer(IManifest mod, string id, IDataLayer layer);
 }
 
 /// <summary>
