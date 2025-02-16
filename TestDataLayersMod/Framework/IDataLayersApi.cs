@@ -4,7 +4,7 @@ using StardewValley;
 using Microsoft.Xna.Framework;
 using System;
 
-namespace Pathoschild.Stardew.DataLayers;
+namespace Pathoschild.Stardew.TestDataLayersMod.Framework;
 
 /// <summary>
 /// API for mods to interact with Data Layers.

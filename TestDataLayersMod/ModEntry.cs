@@ -1,8 +1,8 @@
-using Pathoschild.Stardew.DataLayers;
+using Pathoschild.Stardew.TestDataLayersMod.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 
-namespace Pathoschild.Stardew.ExampleDataLayer;
+namespace Pathoschild.Stardew.TestDataLayersMod;
 
 public class ModEntry : Mod
 {

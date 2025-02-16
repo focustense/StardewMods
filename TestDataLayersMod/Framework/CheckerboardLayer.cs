@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Pathoschild.Stardew.DataLayers;
 using StardewValley;
 
-namespace Pathoschild.Stardew.ExampleDataLayer;
+namespace Pathoschild.Stardew.TestDataLayersMod.Framework;
 
 internal class CheckerboardLayer : IDataLayer
 {
