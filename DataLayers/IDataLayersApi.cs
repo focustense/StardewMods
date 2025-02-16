@@ -1,161 +1,85 @@
-using Pathoschild.Stardew.DataLayers.Framework;
+using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+using Pathoschild.Stardew.DataLayers.Framework;
 using StardewModdingAPI;
 using StardewValley;
-using Microsoft.Xna.Framework;
-using System;
 
 namespace Pathoschild.Stardew.DataLayers;
 
-/// <summary>
-/// API for mods to interact with Data Layers.
-/// </summary>
+/// <summary>The API which lets other mods interact with Data Layers.</summary>
 public interface IDataLayersApi
 {
-    /// <summary>
-    /// Registers color schemes to be merged with existing schemes.
-    /// </summary>
-    /// <remarks>
-    /// Mods will typically call this with scheme data loaded via
-    /// <c>Helper.Data.ReadJsonFile<Dictionary<string, Dictionary<string, string?>>>("path/to/asset.json")</c>
-    /// using an asset in their own mod.
-    /// </remarks>
-    /// <param name="schemeData">Raw dictionary data from the color scheme JSON. Each entry is a pair whose key is the scheme ID and whose value is a map of color names to color values for that scheme.</param>
-    /// <param name="assetName">Name of the asset used to load the data. Only used for logging errors and does not affect behavior.</param>
+    /// <summary>Register or override layer color schemes.</summary>
+    /// <param name="schemeData">The color scheme data, in the form color scheme ID → color name → color values.</param>
+    /// <param name="assetName">The name of the asset from which the data was loaded. This is only used to log errors and doesn't affect behavior.</param>
     void RegisterColorSchemes(Dictionary<string, Dictionary<string, string?>> schemeData, string assetName);
 
-    /// <summary>
-    /// Registers a new layer to be managed by Data Layers.
-    /// </summary>
-    /// <remarks>
-    /// After registering, the layer will be visited when cycling through all layers, and can be
-    /// configured with its own key binding in the Data Layers GMCM.
-    /// </remarks>
-    /// <param name="mod">Manifest for the registering mod; used for configuration.</param>
-    /// <param name="id">A unique (within this mod) ID for the layer. Can be left empty if the mod
-    /// only provides a single layer.</param>
-    /// <param name="layer">Implementation of the layer to register.</param>
+    /// <summary>Register a data layer to show in-game.</summary>
+    /// <param name="mod">The manifest for the mod registering the layer.</param>
+    /// <param name="id">A unique ID for the layer within those provided by the same mod. Can be left empty if the mod only provides a single layer.</param>
+    /// <param name="layer">The layer implementation to register.</param>
     void RegisterLayer(IManifest mod, string id, IDataLayer layer);
 }
 
-/// <summary>
-/// External definition of a data layer, to use with <see cref="IDataLayersApi"/>.
-/// </summary>
+/// <summary>A data layer registered through <see cref="IDataLayersApi" />.</summary>
 public interface IDataLayer
 {
-    /// <summary>
-    /// Name of the layer to display in HUD, GMCM, etc.
-    /// </summary>
+    /// <summary>The layer name to show in-game.</summary>
     string Name { get; }
 
-    /// <summary>
-    /// Performs one-time configuration for this layer.
-    /// </summary>
-    /// <param name="legendBuilder">Builder for configuring the legend entries. For the layer to
-    /// draw correctly, all tile type IDs that could be referenced in an <see cref="Update"/> must
-    /// be registered in the legend.</param>
+    /// <summary>Configure the legend display for this layer.</summary>
+    /// <param name="legendBuilder">The legend builder. All tile type IDs that could be referenced in an <see cref="Update"/> must be registered in the legend.</param>
     void Configure(ILegendBuilder legendBuilder);
 
-    /// <summary>
-    /// Updates the layer's state and gets the current set of tiles in the layer.
-    /// </summary>
-    /// <param name="location">The location where the layers will be drawn; i.e. the player's
-    /// current location.</param>
-    /// <param name="builder">The builder instance to which current tile groups and tiles may be
-    /// added.</param>
+    /// <summary>Get the updated data layer tiles.</summary>
     /// <param name="location">The current location.</param>
+    /// <param name="builder">The builder instance to which current tile groups and tiles should be added.</param>
     /// <param name="visibleArea">The tile area currently visible on the screen.</param>
     /// <param name="visibleTiles">The tile positions currently visible on the screen.</param>
     /// <param name="cursorTile">The tile position under the cursor.</param>
-    void Update(
-        ILayerBuilder builder,
-        GameLocation location,
-        Rectangle visibleArea,
-        IReadOnlySet<Vector2> visibleTiles,
-        Vector2 cursorTile);
+    void Update(ILayerBuilder builder, GameLocation location, Rectangle visibleArea, IReadOnlySet<Vector2> visibleTiles, Vector2 cursorTile);
 }
 
-/// <summary>
-/// API for setting up the legend entries (names corresponding to colors) for a data layer.
-/// </summary>
+/// <summary>An API to register the legend entries for a data layer.</summary>
 public interface ILegendBuilder
 {
-    /// <summary>
-    /// Adds an item to the legend.
-    /// </summary>
-    /// <param name="id">Identifies the tile type within this layer. Corresponds to the
-    /// <c>defaultTileTypeId</c> used in <see cref="ILayerBuilder.AddTileGroup)"/> and the
-    /// <c>typeId</c> for <see cref="ITileGroupBuilder.AddTile"/>.</param>
-    /// <param name="name">Descriptive text to show in the actual legend UI.</param>
-    /// <param name="color">The default overlay color for tiles tagged with <paramref name="id"/>,
-    /// if no color is specified in the <see cref="ColorScheme"/>.</param>
-    /// <returns>The current builder instance, for configuring additional entries.</returns>
+    /// <summary>Add an item to the legend.</summary>
+    /// <param name="id">A unique ID for the tile type within this layer. This must match the ID provided to <see cref="ILayerBuilder.AddTileGroup"/> and <see cref="ITileGroupBuilder.AddTile"/>.</param>
+    /// <param name="name">The descriptive name to show in-game.</param>
+    /// <param name="color">The default overlay color for tiles of this type when no color is specified in the <see cref="ColorScheme"/>.</param>
+    /// <returns>The builder instance for chaining.</returns>
     ILegendBuilder Add(string id, string name, Color color);
 }
 
-/// <summary>
-/// API for sending tile output for a layer during an update.
-/// </summary>
+/// <summary>An API which tracks the layer tiles to display after an update.</summary>
 public interface ILayerBuilder
 {
-    /// <summary>
-    /// Starts a new tile group that will display on the next update frame.
-    /// </summary>
-    /// <remarks>
-    /// A tile group is a set tiles that are related in some way - for example, tiles in the
-    /// coverage area of a craftable device like a sprinkler, or tiles along a path between two
-    /// objects coordinating their functions. If no such relationships exist, then the grouping can
-    /// be arbitrary, although a common convention is to provide one group per tile type.
-    /// </remarks>
-    /// <param name="defaultTileTypeId">A default type ID, previously registered in
-    /// <see cref="IDataLayer.Configure"/>, that will apply as default for any tiles added to this
-    /// group without an explicit color.</param>
-    /// <param name="buildGroup">Action to build the group, i.e. add tiles to it and configure
-    /// additional options.</param>
-    /// <returns>The current builder instance, to optionally add more groups.</returns>
+    /// <summary>Add a tile group to display on the next update frame.</summary>
+    /// <param name="defaultTileTypeId">The default tile type ID for tiles which don't have an explicit color. This must match the ID provided to <see cref="IDataLayer.Configure"/>.</param>
+    /// <param name="buildGroup">The action invoked to build a tile group during an update.</param>
+    /// <returns>The builder instance for chaining.</returns>
+    /// <remarks>A tile group is a set of related tiles that are related in some way (e.g. tiles covered by a sprinker) which have a common overlay color and border.</remarks>
     ILayerBuilder AddTileGroup(string defaultTileTypeId, Action<ITileGroupBuilder> buildGroup);
 }
 
-/// <summary>
-/// API for adding tiles to an in-progress tile group, as part of the current output of a layer.
-/// </summary>
+/// <summary>An API to add tiles to a tile group registered via <see cref="ILayerBuilder"/>.</summary>
 public interface ITileGroupBuilder
 {
-    /// <summary>
-    /// Adds a single tile to the group.
-    /// </summary>
-    /// <param name="position">X/Y coordinates of the tile.</param>
-    /// <param name="typeId">Identifies what kind of tile this is, which controls what color will be
-    /// shown for it. Must have been previously registered with the <see cref="ILegendBuilder"/>.
-    /// Can be omitted if it is the same as the <c>defaultTileTypeId</c> specified when creating the
-    /// group from <see cref="ILayerBuilder.AddTileGroup"/>.</param>
-    /// <returns>The current builder instance, for adding more tiles or setting additional
-    /// options.</returns>
+    /// <summary>Add one tile to the group.</summary>
+    /// <param name="position">The coordinate containing the tile, measured in in-game map tiles.</param>
+    /// <param name="typeId">The tile type, matching the ID provided to <see cref="IDataLayer.Configure"/>. This can be omitted to use the <c>defaultTileTypeId</c> specified when creating the group from <see cref="ILayerBuilder.AddTileGroup"/>.</param>
+    /// <returns>The builder instance for chaining.</returns>
     ITileGroupBuilder AddTile(Vector2 position, string? typeId = null);
 
-    /// <summary>
-    /// Adds multiple tiles to the group.
-    /// </summary>
-    /// <param name="positions">Sequence containing X/Y coordinates of individual tiles.</param>
-    /// <param name="typeIdSelector">A function that accepts a single X/Y coordinate pair and
-    /// returns a value indicating what type of tile it is, which controls what color will be shown
-    /// for it. Must have been previously registered with the <see cref="ILegendBuilder"/>. If this
-    /// argument is omitted, then all tiles added will use the <c>defaultTileTypeId</c> specified
-    /// when creating the group from <see cref="ILayerBuilder.AddTileGroup"/>.</param>
-    /// <returns>The current builder instance, for adding more tiles or setting additional
-    /// options.</returns>
+    /// <summary>Add multiple tiles to the group.</summary>
+    /// <param name="positions">The coordinate containing the tiles, measured in in-game map tiles.</param>
+    /// <param name="typeIdSelector">Provides the tile type (matching the ID provided to <see cref="IDataLayer.Configure"/>) given the tile coordinate. This can be omitted to use the <c>defaultTileTypeId</c> specified when creating the group from <see cref="ILayerBuilder.AddTileGroup"/>.</param>
+    /// <returns>The builder instance for chaining.</returns>
     ITileGroupBuilder AddTiles(IEnumerable<Vector2> positions, Func<Vector2, string>? typeIdSelector);
 
-    /// <summary>
-    /// Configures a border drawn around the outer edges of all outer tiles in the group.
-    /// </summary>
-    /// <remarks>
-    /// Borders will be drawn around all "islands" - i.e. all edges that are not shared between more
-    /// than one tile.
-    /// </remarks>
-    /// <param name="color">The color of the border to draw. If this is <c>null</c>, no border will
-    /// be drawn.</param>
-    /// <returns>The current builder instance, for adding more tiles or setting additional
-    /// options.</returns>
+    /// <summary>Configure the border drawn around the outer edges of the tile group 'islands' (i.e. edges that don't border another tile in the same group).</summary>
+    /// <param name="color">The border color to draw. If this is <c>null</c>, no border will be drawn.</param>
+    /// <returns>The builder instance for chaining.</returns>
     ITileGroupBuilder SetOuterBorderColor(Color? color);
 }

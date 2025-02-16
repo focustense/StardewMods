@@ -8,26 +8,37 @@ using StardewValley;
 namespace Pathoschild.Stardew.DataLayers.Framework
 {
     /// <summary>Tracks loaded color schemes and colors.</summary>
-    /// <param name="monitor">The monitor with which to log error messages.</param>
-    internal class ColorRegistry(IMonitor monitor)
+    internal class ColorRegistry
     {
+        /*********
+        ** Fields
+        *********/
+        /// <summary>The monitor with which to log error messages.</summary>
+        private readonly IMonitor Monitor;
+
+        /// <summary>The color schemes available to apply.</summary>
+        private readonly Dictionary<string, ColorScheme> Schemes = new(StringComparer.OrdinalIgnoreCase);
+
+
         /*********
         ** Accessors
         *********/
         /// <summary>The collection of all available scheme IDs.</summary>
         public IEnumerable<string> SchemeIds => this.Schemes.Keys;
 
-        /*********
-        ** Fields
-        *********/
-        /// <summary>The monitor with which to log error messages.</summary>
-        private readonly IMonitor Monitor = monitor;
 
-        /// <summary>The color schemes available to apply.</summary>
-        private readonly Dictionary<string, ColorScheme> Schemes = new(StringComparer.OrdinalIgnoreCase);
+        /*********
+        ** Public methods
+        *********/
+        /// <summary>Construct an instance.</summary>
+        /// <param name="monitor">The monitor with which to log error messages.</param>
+        public ColorRegistry(IMonitor monitor)
+        {
+            this.Monitor = monitor;
+        }
 
         /// <summary>Load the default color schemes from mod assets.</summary>
-        /// <param name="dataHelper">Helper for local mod assets.</param>
+        /// <param name="dataHelper">The SMAPI API to read local mod assets.</param>
         public void LoadDefaultSchemes(IDataHelper dataHelper)
         {
             var rawData = dataHelper.ReadJsonFile<Dictionary<string, Dictionary<string, string?>>>(ColorScheme.AssetName);
@@ -42,6 +53,7 @@ namespace Pathoschild.Stardew.DataLayers.Framework
             schemeData = schemeData is not null
                 ? new(schemeData, StringComparer.OrdinalIgnoreCase)
                 : new(StringComparer.OrdinalIgnoreCase);
+
             foreach ((string schemeId, Dictionary<string, string?> rawColors) in schemeData)
             {
                 Dictionary<string, Color> colors = new(StringComparer.OrdinalIgnoreCase);
@@ -52,31 +64,23 @@ namespace Pathoschild.Stardew.DataLayers.Framework
 
                     if (color is null)
                     {
-                        this.Monitor.Log(
-                            $"Can't load color '{name}' from{(!ColorScheme.IsDefaultColorScheme(schemeId) ? $" color scheme '{schemeId}'" : "")} '{assetName ?? ColorScheme.AssetName}'. " +
-                            $"The value '{rawColor}' isn't a valid color format.", LogLevel.Warn);
+                        this.Monitor.Log($"Can't load color '{name}' from{(!ColorScheme.IsDefaultColorScheme(schemeId) ? $" color scheme '{schemeId}'" : "")} '{assetName ?? ColorScheme.AssetName}'. The value '{rawColor}' isn't a valid color format.", LogLevel.Warn);
                         continue;
                     }
 
                     colors[name] = color.Value;
                 }
                 if (this.Schemes.TryGetValue(schemeId, out var registeredColors))
-                {
                     registeredColors.Merge(colors);
-                }
                 else
-                {
                     this.Schemes[schemeId] = new ColorScheme(schemeId, colors, this.Monitor);
-                }
             }
         }
 
-        /// <summary>
-        /// Tries to retrieve a color scheme by its ID.
-        /// </summary>
-        /// <param name="schemeId">The ID of the scheme.</param>
-        /// <param name="scheme">The matching <see cref="ColorScheme"/>, if found.</param>
-        /// <returns><c>true</c> if a scheme was found, otherwise <c>false</c>.</returns>
+        /// <summary>Try to get a color scheme by its ID.</summary>
+        /// <param name="schemeId">The scheme ID.</param>
+        /// <param name="scheme">The matching color scheme, or <c>null</c> if not found.</param>
+        /// <returns>Returns whether a scheme was found.</returns>
         public bool TryGetScheme(string schemeId, [MaybeNullWhen(false)] out ColorScheme scheme)
         {
             return this.Schemes.TryGetValue(schemeId, out scheme);

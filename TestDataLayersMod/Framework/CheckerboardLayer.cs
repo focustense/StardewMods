@@ -4,10 +4,20 @@ using StardewValley;
 
 namespace Pathoschild.Stardew.TestDataLayersMod.Framework;
 
+/// <summary>A data layer which shows a checkerboard tile pattern.</summary>
 internal class CheckerboardLayer : IDataLayer
 {
+    /*********
+    ** Accessors
+    *********/
+    /// <inheritdoc />
     public string Name => I18n.Example_Layer_Title();
 
+
+    /*********
+    ** Public methods
+    *********/
+    /// <inheritdoc />
     public void Configure(ILegendBuilder legendBuilder)
     {
         legendBuilder
@@ -15,6 +25,7 @@ internal class CheckerboardLayer : IDataLayer
             .Add("example.layer.odd", I18n.Example_Layer_Odd(), Color.Red);
     }
 
+    /// <inheritdoc />
     public void Update(ILayerBuilder builder, GameLocation location, Rectangle visibleArea, IReadOnlySet<Vector2> visibleTiles, Vector2 cursorTile)
     {
         builder.AddTileGroup(
@@ -23,6 +34,8 @@ internal class CheckerboardLayer : IDataLayer
                 visibleTiles,
                 coords => coords.X % 2 == 0 ^ coords.Y % 2 == 0
                     ? "example.layer.even"
-                    : "example.layer.odd"));
+                    : "example.layer.odd"
+            )
+        );
     }
 }

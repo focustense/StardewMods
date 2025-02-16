@@ -4,21 +4,29 @@ using StardewModdingAPI.Events;
 
 namespace Pathoschild.Stardew.TestDataLayersMod;
 
+/// <summary>The mod entry point.</summary>
 public class ModEntry : Mod
 {
-    private IDataLayersApi DataLayers = null!; // Set in Entry
-
+    /*********
+    ** Public methods
+    *********/
+    /// <inheritdoc />
     public override void Entry(IModHelper helper)
     {
         I18n.Init(helper.Translation);
 
-        helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
+        helper.Events.GameLoop.GameLaunched += this.OnGameLaunched;
     }
 
+
+    /*********
+    ** Private methods
+    *********/
+    /// <inheritdoc cref="IGameLoopEvents.GameLaunched" />
     [EventPriority(EventPriority.Normal - 1)]
-    private void GameLoop_GameLaunched(object? sender, GameLaunchedEventArgs e)
+    private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
-        this.DataLayers = this.Helper.ModRegistry.GetApi<IDataLayersApi>("Pathoschild.DataLayers")!;
-        this.DataLayers.RegisterLayer(this.ModManifest, "checkerboard", new CheckerboardLayer());
+        var dataLayers = this.Helper.ModRegistry.GetApi<IDataLayersApi>("Pathoschild.DataLayers")!;
+        dataLayers.RegisterLayer(this.ModManifest, "checkerboard", new CheckerboardLayer());
     }
 }

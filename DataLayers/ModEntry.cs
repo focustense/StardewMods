@@ -33,7 +33,7 @@ internal class ModEntry : Mod
     /// <summary>The configured key bindings.</summary>
     private ModConfigKeys Keys => this.Config.Controls;
 
-    /// <summary>The color registry with available color schemes.</summary>
+    /// <summary>Manages available color schemes and colors.</summary>
     private ColorRegistry ColorRegistry = null!; // loaded in Entry
 
     /// <summary>The current display colors to use.</summary>
@@ -90,18 +90,17 @@ internal class ModEntry : Mod
         commandHandler.RegisterWith(helper.ConsoleCommands);
     }
 
-        /// <summary>Returns the mod's public API, for registering externally-implemented layers.</summary>
-        public override object? GetApi()
-        {
-            return this.Api;
-        }
+    /// <inheritdoc />
+    public override object GetApi()
+    {
+        return this.Api;
+    }
+
 
     /*********
     ** Private methods
     *********/
     /// <inheritdoc cref="IGameLoopEvents.GameLaunched"/>
-    /// <param name="sender">The event sender.</param>
-    /// <param name="e">The event data.</param>
     private void OnGameLaunchedNormalPriority(object? sender, GameLaunchedEventArgs e)
     {
         // init mod integrations
@@ -109,11 +108,7 @@ internal class ModEntry : Mod
     }
 
     /// <inheritdoc cref="IGameLoopEvents.GameLaunched"/>
-    /// <remarks>Runs at low priority, with the expectation that other mods will perform their
-    /// registrations in normal-priority <c>OnGameLaunched</c> handlers. Any initialization code
-    /// that depends on having all layers/configs available should run here.</remarks>
-    /// <param name="sender">The event sender.</param>
-    /// <param name="e">The event data.</param>
+    /// <remarks>Runs at low priority so other mods can register layers in their <c>OnGameLaunched</c> handlers. Any initialization code that depends on having all layers/configs available should run here.</remarks>
     [EventPriority(EventPriority.Low)]
     private void OnGameLaunchedLowPriority(object? sender, GameLaunchedEventArgs e)
     {
@@ -149,7 +144,7 @@ internal class ModEntry : Mod
     /// <summary>Get the enabled data layers.</summary>
     /// <param name="config">The mod configuration.</param>
     /// <param name="mods">Handles access to the supported mod integrations.</param>
-    /// <param name="layerRegistry">Registry for mod layers added through the API.</param>
+    /// <param name="layerRegistry">The mod layers registered through the API.</param>
     private IEnumerable<ILayer> GetLayers(ModConfig config, ModIntegrations mods, ILayerRegistry layerRegistry)
     {
         ModConfigLayers layers = config.Layers;
@@ -180,14 +175,8 @@ internal class ModEntry : Mod
         if (layers.Tillable.IsEnabled())
             yield return new TillableLayer(layers.Tillable, colors);
 
-       foreach (var registration in layerRegistry.GetAllRegistrations())
-       {
-           yield return new ModLayer(
-               registration,
-               config.GetModLayerConfig(registration.UniqueId),
-               colors,
-               this.Monitor);
-       }
+        foreach (var registration in layerRegistry.GetAllRegistrations())
+            yield return new ModLayer(registration, config.GetModLayerConfig(registration.UniqueId), colors, this.Monitor);
 
         // add separate grid layer if grid isn't enabled for all layers
         if (!config.ShowGrid && layers.TileGrid.IsEnabled())

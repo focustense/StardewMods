@@ -15,10 +15,10 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     /// <summary>The default mod settings.</summary>
     private readonly ModConfig DefaultConfig = new();
 
-    /// <summary>The color registry holding available schemes and colors.</summary>
+    /// <summary>The color registry which manages available schemes and colors.</summary>
     private readonly ColorRegistry ColorRegistry;
 
-    /// <summary>Layers registered by other mods.</summary>
+    /// <summary>The layers registered by other mods.</summary>
     private readonly ILayerRegistry LayerRegistry;
 
 
@@ -26,8 +26,8 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     ** Public methods
     *********/
     /// <summary>Construct an instance.</summary>
-    /// <param name="layerRegistry">Layers registered by other mods.</param>
-    /// <param name="colorSchemes">The color schemes available to apply.</param>
+    /// <param name="layerRegistry">The layers registered by other mods.</param>
+    /// <param name="colorRegistry">The color registry which manages available schemes and colors.</param>
     public GenericModConfigMenuIntegrationForDataLayers(ILayerRegistry layerRegistry, ColorRegistry colorRegistry)
     {
         this.LayerRegistry = layerRegistry;
@@ -37,6 +37,7 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
     /// <inheritdoc />
     public void Register(GenericModConfigMenuIntegration<ModConfig> menu, IMonitor monitor)
     {
+        // add general settings
         menu
             .Register()
             .AddSectionTitle(I18n.Config_Section_MainOptions)
@@ -81,64 +82,49 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
                 set: (config, value) => config.Controls.NextLayer = value
             );
 
+        // add layer options
         List<LayerConfigSection> configSections = [
-            GetBuiltInSection(config => config.Layers.Accessible, "accessible"),
-            GetBuiltInSection(config => config.Layers.Buildable, "buildable"),
-            GetBuiltInSection(config => config.Layers.CoverageForBeeHouses, "bee-houses"),
-            GetBuiltInSection(config => config.Layers.CoverageForJunimoHuts, "junimo-huts"),
-            GetBuiltInSection(config => config.Layers.CoverageForScarecrows, "scarecrows"),
-            GetBuiltInSection(config => config.Layers.CoverageForSprinklers, "sprinklers"),
-            GetBuiltInSection(config => config.Layers.CropHarvest, "crop-harvest"),
-            GetBuiltInSection(config => config.Layers.CropWater, "crop-water"),
-            GetBuiltInSection(config => config.Layers.CropPaddyWater, "crop-paddy-water"),
-            GetBuiltInSection(config => config.Layers.CropFertilizer, "crop-fertilizer"),
-            GetBuiltInSection(config => config.Layers.Machines, "machines"),
-            GetBuiltInSection(config => config.Layers.TileGrid, "grid"),
-            GetBuiltInSection(config => config.Layers.Tillable, "tillable"),
+            this.GetBuiltInSection(config => config.Layers.Accessible, "accessible"),
+            this.GetBuiltInSection(config => config.Layers.Buildable, "buildable"),
+            this.GetBuiltInSection(config => config.Layers.CoverageForBeeHouses, "bee-houses"),
+            this.GetBuiltInSection(config => config.Layers.CoverageForJunimoHuts, "junimo-huts"),
+            this.GetBuiltInSection(config => config.Layers.CoverageForScarecrows, "scarecrows"),
+            this.GetBuiltInSection(config => config.Layers.CoverageForSprinklers, "sprinklers"),
+            this.GetBuiltInSection(config => config.Layers.CropHarvest, "crop-harvest"),
+            this.GetBuiltInSection(config => config.Layers.CropWater, "crop-water"),
+            this.GetBuiltInSection(config => config.Layers.CropPaddyWater, "crop-paddy-water"),
+            this.GetBuiltInSection(config => config.Layers.CropFertilizer, "crop-fertilizer"),
+            this.GetBuiltInSection(config => config.Layers.Machines, "machines"),
+            this.GetBuiltInSection(config => config.Layers.TileGrid, "grid"),
+            this.GetBuiltInSection(config => config.Layers.Tillable, "tillable"),
         ];
 
-        foreach (var registration in this.LayerRegistry.GetAllRegistrations())
+        foreach (LayerRegistration layer in this.LayerRegistry.GetAllRegistrations())
         {
-            configSections.Add(new(
-                config => config.GetModLayerConfig(registration.UniqueId),
-                () => I18n.GetByKey(
-                    "config.section.layer",
-                    new { LayerName = registration.Layer.Name })));
+            configSections.Add(new LayerConfigSection(
+                GetLayer: config => config.GetModLayerConfig(layer.UniqueId),
+                GetTitle: () => I18n.GetByKey("config.section.layer", new { LayerName = layer.Layer.Name })
+            ));
         }
-        // Language can change while the game is running, but usually doesn't. This gives us
-        // alphabetical order most of the time.
-        configSections.Sort((a, b) => a.GetTitle().CompareTo(b.GetTitle()));
-        foreach (var section in configSections)
-        {
+
+        // sort layers by alphabetical name.
+        // This doesn't account for the language changing later, but there's no way to handle that through Generic Mod Config Menu.
+        foreach (LayerConfigSection section in configSections.OrderBy(p => p.GetTitle()))
             this.AddLayerConfigSection(menu, section);
-        }
-
     }
-
-    /// <summary>
-    /// Derives <see cref="LayerConfigSection"/> data for an internal (built-in) layer type.
-    /// </summary>
-    /// <param name="getLayer">Function to get the layer field from a config model.</param>
-    /// <param name="translationKey">The translation key for this layer.</param>
-    /// <returns></returns>
-    private static LayerConfigSection GetBuiltInSection(
-        Func<ModConfig, LayerConfig> getLayer,
-        string translationKey)
-    {
-        return new(getLayer, () => GetLayerSectionTitle(translationKey));
-    }
-
-    /// <summary>Information about a single layer's configuration settings.</summary>
-    /// <param name="GetLayer">Function to get the layer field from a config model.</param>
-    /// <param name="GetTitle">Function to get the (localized) section title.</param>
-    private record LayerConfigSection(
-        Func<ModConfig, LayerConfig> GetLayer,
-        Func<string> GetTitle);
 
 
     /*********
     ** Private methods
     *********/
+    /// <summary>Create a config section for a data layer provided by Data Layers itself.</summary>
+    /// <param name="getLayer">Get the layer field from a config model.</param>
+    /// <param name="translationKey">The translation key for this layer.</param>
+    private LayerConfigSection GetBuiltInSection(Func<ModConfig, LayerConfig> getLayer, string translationKey)
+    {
+        return new LayerConfigSection(getLayer, () => this.GetLayerSectionTitle(translationKey));
+    }
+
     /// <summary>Add the config section for a layer.</summary>
     /// <param name="menu">The integration API through which to register the config menu.</param>
     /// <param name="section">Contains the information about this layer/config section.</param>
@@ -178,9 +164,14 @@ internal class GenericModConfigMenuIntegrationForDataLayers : IGenericModConfigM
 
     /// <summary>Get the translated section title for a layer.</summary>
     /// <param name="translationKey">The layer ID.</param>
-    private static string GetLayerSectionTitle(string translationKey)
+    private string GetLayerSectionTitle(string translationKey)
     {
         string layerName = I18n.GetByKey($"{translationKey}.name");
         return I18n.Config_Section_Layer(layerName);
     }
+
+    /// <summary>A data layer's configuration settings.</summary>
+    /// <param name="GetLayer">Get the layer field from a config model.</param>
+    /// <param name="GetTitle">Get the translated section title.</param>
+    private record LayerConfigSection(Func<ModConfig, LayerConfig> GetLayer, Func<string> GetTitle);
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
@@ -27,8 +26,8 @@ internal class ModConfig
     /// <summary>The generic settings for each layer.</summary>
     public ModConfigLayers Layers { get; set; } = new();
 
-        /// <summary>The generic settings for mod-added layers, keyed by mod ID and layer name.</summary>
-        public Dictionary<string, LayerConfig> ModLayers { get; set; } = [];
+    /// <summary>The generic settings for data layers registered through the API, indexed by mod ID and layer name.</summary>
+    public Dictionary<string, LayerConfig> ModLayers { get; set; } = [];
 
 
     /*********
@@ -45,19 +44,14 @@ internal class ModConfig
         this.Layers ??= new ModConfigLayers();
     }
 
-    /// <summary>
-    /// Retrieves the layer configuration for a specific mod-registered layer, creating one if
-    /// it does not already exist.
-    /// </summary>
-    /// <param name="id">Unique ID for the layer; the <see cref="LayerRegistration.Id"/>.</param>
-    /// <returns>The configuration for the layer with specified <paramref name="id"/>.</returns>
+    /// <summary>Get the configuration for a layer registered through the API, creating one if it doesn't already exist.</summary>
+    /// <param name="id">The unique ID for the layer matching <see cref="LayerRegistration.UniqueId"/>.</param>
+    /// <returns>The configuration to use for the layer.</returns>
     public LayerConfig GetModLayerConfig(string id)
     {
-        if (!this.ModLayers.TryGetValue(id, out var layer))
-        {
-            layer = new();
-            this.ModLayers.Add(id, layer);
-        }
+        if (!this.ModLayers.TryGetValue(id, out LayerConfig? layer))
+            this.ModLayers[id] = layer = new();
+
         return layer;
     }
 }
