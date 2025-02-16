@@ -11,8 +11,8 @@ internal class CheckerboardLayer : IDataLayer
     public void Configure(ILegendBuilder legendBuilder)
     {
         legendBuilder
-            .Add("example.layer.even", I18n.Example_Layer_Even(), "evencolor", Color.Green)
-            .Add("example.layer.odd", I18n.Example_Layer_Odd(), "oddcolor", Color.Red);
+            .Add("example.layer.even", I18n.Example_Layer_Even(), Color.Green)
+            .Add("example.layer.odd", I18n.Example_Layer_Odd(), Color.Red);
     }
 
     public void Update(

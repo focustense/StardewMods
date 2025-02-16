@@ -19,6 +19,6 @@ public class ModEntry : Mod
     private void GameLoop_GameLaunched(object? sender, GameLaunchedEventArgs e)
     {
         this.DataLayers = this.Helper.ModRegistry.GetApi<IDataLayersApi>("Pathoschild.DataLayers")!;
-        this.DataLayers.Register(this.ModManifest, "checkerboard", new CheckerboardLayer());
+        this.DataLayers.RegisterLayer(this.ModManifest, "checkerboard", new CheckerboardLayer());
     }
 }
