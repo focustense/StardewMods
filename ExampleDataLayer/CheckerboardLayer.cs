@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Pathoschild.Stardew.DataLayers;
 using StardewValley;
@@ -15,12 +16,7 @@ internal class CheckerboardLayer : IDataLayer
             .Add("example.layer.odd", I18n.Example_Layer_Odd(), Color.Red);
     }
 
-    public void Update(
-        ILayerBuilder builder,
-        GameLocation location,
-        Rectangle visibleArea,
-        Vector2[] visibleTiles,
-        Vector2 cursorTile)
+    public void Update(ILayerBuilder builder, GameLocation location, Rectangle visibleArea, IReadOnlySet<Vector2> visibleTiles, Vector2 cursorTile)
     {
         builder.AddTileGroup(
             "",

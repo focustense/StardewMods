@@ -58,7 +58,7 @@ public interface IDataLayer
         ILayerBuilder builder,
         GameLocation location,
         Rectangle visibleArea,
-        Vector2[] visibleTiles,
+        IReadOnlySet<Vector2> visibleTiles,
         Vector2 cursorTile);
 }
 

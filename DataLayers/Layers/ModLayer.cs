@@ -17,12 +17,7 @@ namespace Pathoschild.Stardew.DataLayers.Layers;
 /// <see cref="IDataLayer"/> definition.</param>
 /// <param name="config">Configuration data for this layer.</param>
 /// <param name="colors">Global color scheme for Data Layers.</param>
-internal class ModLayer(
-    LayerRegistration source,
-    LayerConfig config,
-    ColorScheme colors,
-    IMonitor monitor)
-    : ILayer
+internal class ModLayer(LayerRegistration source, LayerConfig config, ColorScheme colors, IMonitor monitor) : ILayer
 {
     public string Id { get; } = source.GetType().FullName!;
 
@@ -40,11 +35,7 @@ internal class ModLayer(
 
     private Dictionary<string, LegendEntry>? LegendEntries;
 
-    public TileGroup[] Update(
-        GameLocation location,
-        in Rectangle visibleArea,
-        in Vector2[] visibleTiles,
-        in Vector2 cursorTile)
+    public TileGroup[] Update(ref readonly GameLocation location, ref readonly Rectangle visibleArea, ref readonly IReadOnlySet<Vector2> visibleTiles, ref readonly Vector2 cursorTile)
     {
         if (this.LegendEntries is null)
         {
